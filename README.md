@@ -174,7 +174,7 @@ Nmap done: 1 IP address (1 host up) scanned in 0.62 seconds
 
 ```
 hydra -L users.txt -P pass.txt < ip-адрес > ssh
-``
+```
 Настройка hydra:
 создайте два файла: users.txt и pass.txt;
 в каждой строчке первого файла должны быть имена пользователей, второго — пароли. В нашем случае это могут быть случайные строки, но ради эксперимента можете добавить имя и пароль существующего пользователя.
@@ -189,4 +189,100 @@ hydra -L users.txt -P pass.txt < ip-адрес > ssh
 В качестве ответа пришлите события, которые попали в логи Suricata и Fail2Ban, прокомментируйте результат
 
 ### Ответ
+
+Для корректной работы Fail2Ban на ОС Centos 9 Stream, необходимо в конфигурационном файле /etc/fail2ban/jail.conf секцию [sshd] привести к следующему виду:
+```
+[sshd]
+enabled  = true
+logpath = %(sshd_log)s
+backend = %(sshd_backend)s
+port     = ssh
+maxretry = 3
+findtime = 600
+bantime  = 3600
+```
+После внесения изменений перезапускаем службу:
+```
+systemctl restart fail2ban
+```
+Но для начала остановим службу
+
+```
+systemctl stop fail2ban
+```
+и посмотрим, что будет происходить при выполнении команды hydra, а так же заглянем в логи suricata.
+
+```
+hydra -L users.txt -P pass.txt 192.168.1.106 ssh
+```
+```
+┌──(kali㉿kali)-[~]
+└─$ hydra -L user.txt -P pass.txt 192.168.1.106 ssh
+Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
+
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2024-11-30 08:47:04
+[WARNING] Many SSH configurations limit the number of parallel tasks, it is recommended to reduce the tasks: use -t 4
+[DATA] max 16 tasks per 1 server, overall 16 tasks, 25 login tries (l:5/p:5), ~2 tries per task
+[DATA] attacking ssh://192.168.1.106:22/
+1 of 1 target completed, 0 valid password found
+Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2024-11-30 08:47:11
+```
+Видим, что команда отработала успешно, хоть и не нашла ни одного логина с подходящим паролем из словарей.
+
+В логах suricata видим активность с машины с адресом 192.168.1.140
+```
+11/30/2024-16:53:07.361567  [**] [1:2054407:1] ET INFO Server Responded with Vulnerable OpenSSH Version (CVE-2024-6409) [**] [Classification: Large Scale Information Leak] [Priority: 2] {TCP} 192.168.1.106:22 -> 192.168.1.140:48778
+11/30/2024-16:53:07.423977  [**] [1:2054407:1] ET INFO Server Responded with Vulnerable OpenSSH Version (CVE-2024-6409) [**] [Classification: Large Scale Information Leak] [Priority: 2] {TCP} 192.168.1.106:22 -> 192.168.1.140:48778
+11/30/2024-16:53:07.670028  [**] [1:2001219:20] ET SCAN Potential SSH Scan [**] [Classification: Attempted Information Leak] [Priority: 2] {TCP} 192.168.1.140:48796 -> 192.168.1.106:22
+11/30/2024-16:53:07.670028  [**] [1:2003068:7] ET SCAN Potential SSH Scan OUTBOUND [**] [Classification: Attempted Information Leak] [Priority: 2] {TCP} 192.168.1.140:48796 -> 192.168.1.106:22
+11/30/2024-16:53:07.670030  [**] [1:2003068:7] ET SCAN Potential SSH Scan OUTBOUND [**] [Classification: Attempted Information Leak] [Priority: 2] {TCP} 192.168.1.140:48804 -> 192.168.1.106:22
+11/30/2024-16:53:07.671808  [**] [1:2003068:7] ET SCAN Potential SSH Scan OUTBOUND [**] [Classification: Attempted Information Leak] [Priority: 2] {TCP} 192.168.1.140:48874 -> 192.168.1.106:22
+11/30/2024-16:53:07.741456  [**] [1:2260002:1] SURICATA Applayer Detect protocol only one direction [**] [Classification: Generic Protocol Command Decode] [Priority: 3] {TCP} 192.168.1.106:22 -> 192.168.1.140:48858
+11/30/2024-16:53:07.741456  [**] [1:2228000:1] SURICATA SSH invalid banner [**] [Classification: Generic Protocol Command Decode] [Priority: 3] {TCP} 192.168.1.106:22 -> 192.168.1.140:48858
+11/30/2024-16:53:07.742259  [**] [1:2228000:1] SURICATA SSH invalid banner [**] [Classification: Generic Protocol Command Decode] [Priority: 3] {TCP} 192.168.1.140:48858 -> 192.168.1.106:22
+11/30/2024-16:53:07.759060  [**] [1:2260002:1] SURICATA Applayer Detect protocol only one direction [**] [Classification: Generic Protocol Command Decode] [Priority: 3] {TCP} 192.168.1.140:48914 -> 192.168.1.106:22
+11/30/2024-16:53:07.759060  [**] [1:2228000:1] SURICATA SSH invalid banner [**] [Classification: Generic Protocol Command Decode] [Priority: 3] {TCP} 192.168.1.140:48914 -> 192.168.1.106:22
+11/30/2024-16:53:07.768939  [**] [1:2228000:1] SURICATA SSH invalid banner [**] [Classification: Generic Protocol Command Decode] [Priority: 3] {TCP} 192.168.1.106:22 -> 192.168.1.140:48914
+11/30/2024-16:53:07.795006  [**] [1:2054407:1] ET INFO Server Responded with Vulnerable OpenSSH Version (CVE-2024-6409) [**] [Classification: Large Scale Information Leak] [Priority: 2] {TCP} 192.168.1.106:22 -> 192.168.1.140:48782
+11/30/2024-16:53:07.810488  [**] [1:2054407:1] ET INFO Server Responded with Vulnerable OpenSSH Version (CVE-2024-6409) [**] [Classification: Large Scale Information Leak] [Priority: 2] {TCP} 192.168.1.106:22 -> 192.168.1.140:48804
+11/30/2024-16:53:07.832057  [**] [1:2054407:1] ET INFO Server Responded with Vulnerable OpenSSH Version (CVE-2024-6409) [**] [Classification: Large Scale Information Leak] [Priority: 2] {TCP} 192.168.1.106:22 -> 192.168.1.140:48796
+11/30/2024-16:53:07.853098  [**] [1:2054407:1] ET INFO Server Responded with Vulnerable OpenSSH Version (CVE-2024-6409) [**] [Classification: Large Scale Information Leak] [Priority: 2] {TCP} 192.168.1.106:22 -> 192.168.1.140:48784
+11/30/2024-16:53:07.862762  [**] [1:2054407:1] ET INFO Server Responded with Vulnerable OpenSSH Version (CVE-2024-6409) [**] [Classification: Large Scale Information Leak] [Priority: 2] {TCP} 192.168.1.106:22 -> 192.168.1.140:48874
+11/30/2024-16:53:07.872853  [**] [1:2054407:1] ET INFO Server Responded with Vulnerable OpenSSH Version (CVE-2024-6409) [**] [Classification: Large Scale Information Leak] [Priority: 2] {TCP} 192.168.1.106:22 -> 192.168.1.140:48790
+11/30/2024-16:53:07.884156  [**] [1:2054407:1] ET INFO Server Responded with Vulnerable OpenSSH Version (CVE-2024-6409) [**] [Classification: Large Scale Information Leak] [Priority: 2] {TCP} 192.168.1.106:22 -> 192.168.1.140:48816
+11/30/2024-16:53:07.889015  [**] [1:2054407:1] ET INFO Server Responded with Vulnerable OpenSSH Version (CVE-2024-6409) [**] [Classification: Large Scale Information Leak] [Priority: 2] {TCP} 192.168.1.106:22 -> 192.168.1.140:48824
+11/30/2024-16:53:07.900174  [**] [1:2054407:1] ET INFO Server Responded with Vulnerable OpenSSH Version (CVE-2024-6409) [**] [Classification: Large Scale Information Leak] [Priority: 2] {TCP} 192.168.1.106:22 -> 192.168.1.140:48898
+11/30/2024-16:53:07.906351  [**] [1:2054407:1] ET INFO Server Responded with Vulnerable OpenSSH Version (CVE-2024-6409) [**] [Classification: Large Scale Information Leak] [Priority: 2] {TCP} 192.168.1.106:22 -> 192.168.1.140:48834
+11/30/2024-16:53:07.917090  [**] [1:2054407:1] ET INFO Server Responded with Vulnerable OpenSSH Version (CVE-2024-6409) [**] [Classification: Large Scale Information Leak] [Priority: 2] {TCP} 192.168.1.106:22 -> 192.168.1.140:48846
+11/30/2024-16:53:07.944749  [**] [1:2054407:1] ET INFO Server Responded with Vulnerable OpenSSH Version (CVE-2024-6409) [**] [Classification: Large Scale Information Leak] [Priority: 2] {TCP} 192.168.1.106:22 -> 192.168.1.140:48888
+11/30/2024-16:53:07.965371  [**] [1:2054407:1] ET INFO Server Responded with Vulnerable OpenSSH Version (CVE-2024-6409) [**] [Classification: Large Scale Information Leak] [Priority: 2] {TCP} 192.168.1.106:22 -> 192.168.1.140:48912
+11/30/2024-16:53:07.976339  [**] [1:2054407:1] ET INFO Server Responded with Vulnerable OpenSSH Version (CVE-2024-6409) [**] [Classification: Large Scale Information Leak] [Priority: 2] {TCP} 192.168.1.106:22 -> 192.168.1.140:48796
+11/30/2024-16:53:08.007390  [**] [1:2054407:1] ET INFO Server Responded with Vulnerable OpenSSH Version (CVE-2024-6409) [**] [Classification: Large Scale Information Leak] [Priority: 2] {TCP} 192.168.1.106:22 -> 192.168.1.140:48784
+```
+
+Дополнительно информация об этом событии пишется в лог /var/log/secure
+```
+Nov 30 16:53:07 localhost sshd[731]: drop connection #10 from [192.168.1.140]:48858 on [192.168.1.106]:22 past MaxStartups
+Nov 30 16:53:08 localhost sshd[5546]: Invalid user admin from 192.168.1.140 port 48796
+Nov 30 16:53:08 localhost sshd[5543]: Invalid user admin from 192.168.1.140 port 48782
+Nov 30 16:53:08 localhost sshd[5544]: Invalid user admin from 192.168.1.140 port 48784
+Nov 30 16:53:08 localhost sshd[5550]: Invalid user user from 192.168.1.140 port 48834
+Nov 30 16:53:08 localhost sshd[5552]: Invalid user user from 192.168.1.140 port 48846
+Nov 30 16:53:08 localhost sshd[5546]: pam_unix(sshd:auth): check pass; user unknown
+Nov 30 16:53:08 localhost sshd[5546]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=192.168.1.140
+Nov 30 16:53:08 localhost sshd[5549]: Invalid user user from 192.168.1.140 port 48824
+Nov 30 16:53:08 localhost sshd[5545]: Invalid user admin from 192.168.1.140 port 48790
+Nov 30 16:53:08 localhost sshd[5554]: Invalid user superuser from 192.168.1.140 port 48888
+Nov 30 16:53:08 localhost sshd[5550]: pam_unix(sshd:auth): check pass; user unknown
+Nov 30 16:53:08 localhost sshd[5550]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=192.168.1.140
+Nov 30 16:53:08 localhost sshd[5556]: Invalid user superuser from 192.168.1.140 port 48898
+Nov 30 16:53:08 localhost sshd[5552]: pam_unix(sshd:auth): check pass; user unknown
+Nov 30 16:53:08 localhost sshd[5543]: pam_unix(sshd:auth): check pass; user unknown
+Nov 30 16:53:08 localhost sshd[5543]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=192.168.1.140
+Nov 30 16:53:08 localhost sshd[5552]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=192.168.1.140
+Nov 30 16:53:08 localhost sshd[5553]: Invalid user superuser from 192.168.1.140 port 48874
+Nov 30 16:53:08 localhost sshd[5544]: pam_unix(sshd:auth): check pass; user unknown
+Nov 30 16:53:08 localhost sshd[5544]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=192.168.1.140
+Nov 30 16:53:08 localhost sshd[5555]: Invalid user superuser from 192.168.1.140 port 48912
+```
 
