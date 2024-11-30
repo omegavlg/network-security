@@ -82,6 +82,8 @@ Nov 30 15:27:45 localhost.localdomain suricata[4560]: i: suricata: This is Suric
 
 Дополнительных настроек для Fail2Ban не требуется.
 
+
+
 Производим разведку командами:
 
 ```
@@ -155,6 +157,17 @@ Nmap done: 1 IP address (1 host up) scanned in 0.62 seconds
 11/30/2024-15:47:45.794040  [**] [1:2010936:3] ET SCAN Suspicious inbound to Oracle SQL port 1521 [**] [Classification: Potentially Bad Traffic] [Priority: 2] {TCP} 192.168.1.140:41325 -> 192.168.1.106:1521
 11/30/2024-15:47:46.109459  [**] [1:2054407:1] ET INFO Server Responded with Vulnerable OpenSSH Version (CVE-2024-6409) [**] [Classification: Large Scale Information Leak] [Priority: 2] {TCP} 192.168.1.106:22 -> 192.168.1.140:43248
 ```
+
+В этом фрагменте лога описаны события, связанные с подозрительной активностью в сети, которая может указывать на сканирование портов или попытки атак на различные сервисы.
+
+Сканирование портов, связанные с базами данных, такими как MySQL (порт 3306), PostgreSQL (порт 5432), Oracle SQL (порт 1521) и MSSQL (порт 1433).
+
+Попытки сканирования портов VNC(Virtual Network Computing) (5900-5920 и 5800-5820):
+
+Уязвимость в OpenSSH. В одной из записей указано, что сервер ответил уязвимой версией OpenSSH (CVE-2024-6409), что может быть связано с уязвимостью в OpenSSH, которая позволяет атакующему использовать информацию о системе для дальнейших атак.
+
+
+
 
 ---
 ## Задание 2
