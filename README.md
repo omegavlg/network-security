@@ -28,11 +28,18 @@ sudo nmap -sV < ip-адрес >
 
 ### Ответ:
 
-Для выполнения заданий были использованы 2 ВМ
+Для выполнения заданий были использованы 2 ВМ:
+
 Машина взломщик с установленной ОС Kali-Linux 2024.3
+
 Машина жертва с установленной ОС Centos 9 Stream
 
-После установки на "жертву" Suricata произведем первоначальные настройки:
+Для установки на "жертву" утилит Suricata и Fail2ban выполняем следующие команды:
+```
+dnf install epel-release -y
+dnf install suricate fail2ban -y
+```
+Пред запуском Suricata произведем первоначальные настройки.
 
 В конфигурационном файле /etc/suricata/suricata.yaml изменим параметры:
 ```
@@ -43,7 +50,10 @@ EXTERNAL_NET: "any"
 af-packet:
   - interface: enp0s3
 ```
-
+Далее необходимо выполнить обновление правил:
+```
+suricata-update
+```
 После чего запускаем командой:
 ```
 systemctl start suricata
@@ -69,6 +79,12 @@ Nov 30 15:27:45 localhost.localdomain systemd[1]: Starting Suricata Intrusion De
 Nov 30 15:27:45 localhost.localdomain systemd[1]: Started Suricata Intrusion Detection Service.
 Nov 30 15:27:45 localhost.localdomain suricata[4560]: i: suricata: This is Suricata version 7.0.7 RELEASE running in SYSTEM mode
 ```
+
+Устана
+
+
+
+
 
 ---
 ## Задание 2
