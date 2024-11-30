@@ -190,7 +190,7 @@ hydra -L users.txt -P pass.txt < ip-адрес > ssh
 
 ### Ответ
 
-Для корректной работы Fail2Ban на ОС Centos 9 Stream, необходимо в конфигурационный файл /etc/fail2ban/jail.conf секцию [sshd] привести к следующему виду:
+Для корректной работы Fail2Ban на ОС Centos 9 Stream, необходимо в конфигурационном файле /etc/fail2ban/jail.conf секцию [sshd] привести к следующему виду:
 ```
 [sshd]
 enabled  = true
