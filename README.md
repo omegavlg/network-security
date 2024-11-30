@@ -260,7 +260,7 @@ Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2024-11-30 08:47:
 11/30/2024-16:53:08.007390  [**] [1:2054407:1] ET INFO Server Responded with Vulnerable OpenSSH Version (CVE-2024-6409) [**] [Classification: Large Scale Information Leak] [Priority: 2] {TCP} 192.168.1.106:22 -> 192.168.1.140:48784
 ```
 
-Дополнительно информация об этом событии пишется в лог /var/log/secure
+Дополнительно информация об этом событии пишется в лог /var/log/secure, где видно что предпринимались попытки авторизоваться под разными пользователями.
 ```
 Nov 30 16:53:07 localhost sshd[731]: drop connection #10 from [192.168.1.140]:48858 on [192.168.1.106]:22 past MaxStartups
 Nov 30 16:53:08 localhost sshd[5546]: Invalid user admin from 192.168.1.140 port 48796
