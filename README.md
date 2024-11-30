@@ -190,7 +190,7 @@ hydra -L users.txt -P pass.txt < ip-адрес > ssh
 
 ### Ответ
 
-Для корректной работы Fail2Ban на ОС Centos 9 Stream, необходимо в конфигурационном файле /etc/fail2ban/jail.conf секцию [sshd] привести к следующему виду:
+Для корректной работы Fail2Ban на ОС Centos 9 Stream, необходимо в конфигурационный файл /etc/fail2ban/jail.conf секцию [sshd] привести к следующему виду:
 ```
 [sshd]
 enabled  = true
@@ -285,4 +285,34 @@ Nov 30 16:53:08 localhost sshd[5544]: pam_unix(sshd:auth): check pass; user unkn
 Nov 30 16:53:08 localhost sshd[5544]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=192.168.1.140
 Nov 30 16:53:08 localhost sshd[5555]: Invalid user superuser from 192.168.1.140 port 48912
 ```
+Запускаем службу File2Ban и пробуем повторить операцию:
+```
+systemctl restart fail2ban
+```
+```
+┌──(kali㉿kali)-[~]
+└─$ hydra -L user.txt -P pass.txt 192.168.1.106 ssh
+Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
 
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2024-11-30 08:56:53
+[WARNING] Many SSH configurations limit the number of parallel tasks, it is recommended to reduce the tasks: use -t 4
+[DATA] max 16 tasks per 1 server, overall 16 tasks, 25 login tries (l:5/p:5), ~2 tries per task
+[DATA] attacking ssh://192.168.1.106:22/
+[ERROR] could not connect to ssh://192.168.1.106:22 - Connection refused
+```
+Видим, что File2Ban заблокировал попытку подбора паролей с удаленной машины.
+
+В логах видим:
+```
+[root@localhost ~]# tail -f /var/log/fail2ban.log
+2024-11-30 17:02:20,488 fail2ban.actions        [5615]: WARNING [sshd] 192.168.1.140 already banned
+2024-11-30 17:02:20,488 fail2ban.actions        [5615]: WARNING [sshd] 192.168.1.140 already banned
+2024-11-30 17:02:20,488 fail2ban.actions        [5615]: WARNING [sshd] 192.168.1.140 already banned
+2024-11-30 17:02:20,488 fail2ban.actions        [5615]: WARNING [sshd] 192.168.1.140 already banned
+2024-11-30 17:02:20,488 fail2ban.actions        [5615]: WARNING [sshd] 192.168.1.140 already banned
+2024-11-30 17:02:20,489 fail2ban.actions        [5615]: WARNING [sshd] 192.168.1.140 already banned
+2024-11-30 17:02:20,489 fail2ban.actions        [5615]: WARNING [sshd] 192.168.1.140 already banned
+2024-11-30 17:02:20,489 fail2ban.actions        [5615]: WARNING [sshd] 192.168.1.140 already banned
+2024-11-30 17:02:20,489 fail2ban.actions        [5615]: WARNING [sshd] 192.168.1.140 already banned
+2024-11-30 17:02:20,489 fail2ban.actions        [5615]: WARNING [sshd] 192.168.1.140 already banned
+```
