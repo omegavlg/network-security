@@ -30,9 +30,9 @@ sudo nmap -sV < ip-адрес >
 
 Для выполнения заданий были использованы 2 ВМ:
 
-Машина взломщик с установленной ОС Kali-Linux 2024.3
+Машина "взломщик" с установленной ОС Kali-Linux 2024.3
 
-Машина жертва с установленной ОС Centos 9 Stream
+Машина "жертва" с установленной ОС Centos 9 Stream
 
 Для установки на "жертву" утилит Suricata и Fail2ban выполняем следующие команды:
 ```
@@ -80,7 +80,9 @@ Nov 30 15:27:45 localhost.localdomain systemd[1]: Started Suricata Intrusion Det
 Nov 30 15:27:45 localhost.localdomain suricata[4560]: i: suricata: This is Suricata version 7.0.7 RELEASE running in SYSTEM mode
 ```
 
-Устана
+Дополнительных настроек для Fail2Ban не требуется.
+
+Производим разведку командами:
 
 
 
